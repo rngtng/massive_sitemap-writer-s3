@@ -5,20 +5,24 @@ module MassiveSitemap
   module Writer
     class S3 < MassiveSitemap::Writer::GzipFile
 
-      def initalize(service, bucket, options = {})
-        @service = service
-        @bucket  = service.buckets.find(bucket)
+      def initialize(cfg, options = {})
+        @service = ::S3::Service.new(cfg)
+        @bucket  = @service.buckets.find(cfg[:bucket])
+        super(options)
+
         # read sreams, tale filename (without ext as filter),order DESC
         # delete last file
         # delete random files
-        super(options)
+        # prefix = ::File.basename(current, ".xml.gz")
+        # @streams = @bucket.objects.find_all(:prefix => prefix).map(&:key)
       end
 
       protected
       def close_stream(stream)
+        @filename = filename
         super
-        @bucket.objects.build(::File.basename(filename)).tap do |object|
-          object.content = ::File.open(filename)
+        @bucket.objects.build(::File.basename(@filename)).tap do |object|
+          object.content = ::File.open(@filename)
           object.save
         end
         # add to stream
