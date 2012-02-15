@@ -9,37 +9,26 @@ module MassiveSitemap
         @service = ::S3::Service.new(cfg)
         @bucket  = @service.buckets.find(cfg[:bucket])
         super(options)
-
-        # read sreams, tale filename (without ext as filter),order DESC
-        # delete last file
-        # delete random files
-        # prefix = ::File.basename(current, ".xml.gz")
-        # @streams = @bucket.objects.find_all(:prefix => prefix).map(&:key)
       end
 
       protected
       def close_stream(stream)
         @filename = filename
         super
+        # upload to amazon
+        # TODO what if fail??
         @bucket.objects.build(::File.basename(@filename)).tap do |object|
           object.content = ::File.open(@filename)
           object.save
         end
-        # add to stream
-        # @streams << current
       end
 
-      def init?
-        # check if file is part of streams, fail if so
-        #if !options[:force_overwrite] && streams.include?(filename)
-        #  raise FileExistsException, "Can not create file: #{filename} exits"
-        #end
-        super
-      end
-
-      def streams
-        # @streams
-        super
+      def load_stream_ids
+        @bucket.objects.find_all.each do |object|
+          if ::File.extname(object.key) == ::File.extname(filename)
+            add_stream_id(object.key, object.last_modified)
+          end
+        end
       end
 
     end
