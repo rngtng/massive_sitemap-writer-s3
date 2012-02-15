@@ -15,7 +15,11 @@ Gem::Specification.new do |s|
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   s.require_paths = ["lib"]
 
-  %w(s3 massive_sitemap).each do |gem|
+  s.extra_rdoc_files = [
+    "README.md"
+  ]
+
+  %w(s3 massive_sitemap retryable).each do |gem|
     s.add_runtime_dependency *gem.split(' ')
   end
 

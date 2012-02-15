@@ -1,4 +1,7 @@
+# Copyright (c) 2012, SoundCloud Ltd., Tobias Bielohlawek
+
 require 's3'
+require 'retryable'
 require 'massive_sitemap/writer/gzip_file'
 
 module MassiveSitemap
@@ -16,10 +19,11 @@ module MassiveSitemap
         @filename = filename
         super
         # upload to amazon
-        # TODO what if fail??
-        @bucket.objects.build(::File.basename(@filename)).tap do |object|
-          object.content = ::File.open(@filename)
-          object.save
+        retryable( :tries => 3 ) do
+          @bucket.objects.build(::File.basename(@filename)).tap do |object|
+            object.content = ::File.open(@filename)
+            object.save
+          end
         end
       end
 
