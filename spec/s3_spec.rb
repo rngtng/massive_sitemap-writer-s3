@@ -6,8 +6,8 @@ describe MassiveSitemap::Writer::S3 do
   let(:objects) { mock('objects', :find_all => [], :build => object) }
   let(:bucket) { mock('bucket', :objects => objects) }
   let(:service) { mock('service', :buckets => mock('buckets', :find =>  bucket)) }
-  let(:writer) { MassiveSitemap::Writer::S3.new(s3_options) }
-  let(:s3_options) { Hash.new(:access_key_id => "ak", :secret_access_key => "sa", :bucket => "bucket") }
+  let(:writer) { MassiveSitemap::Writer::S3.new(s3_cfg, :keep => true) }
+  let(:s3_cfg) { Hash.new(:access_key_id => "ak", :secret_access_key => "sa", :bucket => "bucket") }
 
   before do
     ::S3::Service.stub(:new).and_return(service)
@@ -15,7 +15,7 @@ describe MassiveSitemap::Writer::S3 do
 
   describe "initialize" do
     it "creates service" do
-      ::S3::Service.should_receive(:new).with(s3_options).and_return(service)
+      ::S3::Service.should_receive(:new).with(s3_cfg).and_return(service)
       writer
     end
 
@@ -27,10 +27,12 @@ describe MassiveSitemap::Writer::S3 do
 
   describe "close_stream" do
     let(:filename) { "sitemap.xml.gz" }
-      before do
-        writer.init!
-      end
 
+    before do
+      writer.init!
+    end
+
+    context "with keep option" do
       after do
         FileUtils.rm(filename)
       end
@@ -45,5 +47,15 @@ describe MassiveSitemap::Writer::S3 do
         object.should_receive(:"content=").once().and_return(true)
         writer.close!
       end
+    end
+
+    context "without keep option" do
+      let(:writer) { MassiveSitemap::Writer::S3.new(s3_cfg, :keep => false) }
+
+      it "deletes file on local system" do
+        writer.close!
+        File.exists?(filename).should be_false
+      end
+    end
   end
 end

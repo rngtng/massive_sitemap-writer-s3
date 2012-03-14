@@ -25,6 +25,7 @@ module MassiveSitemap
             object.save
           end
         end
+        ::File.delete(@filename) unless @options[:keep]
       end
 
       def load_stream_ids
